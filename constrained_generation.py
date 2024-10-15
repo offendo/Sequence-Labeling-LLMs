@@ -939,7 +939,9 @@ def constrained_beam_search(
                 batch_size=8,
                 model_input_name=model_input_name,
                 model_kwargs=model_kwargs,
-                decoder_start_token_id=generation_config.decoder_start_token_id,
+                decoder_start_token_id=torch.tensor(
+                    generation_config.decoder_start_token_id
+                ),
                 device=inputs_tensor.device,
             )
         else:
