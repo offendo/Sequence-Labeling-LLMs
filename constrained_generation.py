@@ -2,7 +2,7 @@ import copy
 from typing import Dict, List, Union
 
 import torch
-from transformers import BatchEncoding, PreTrainedModel
+from transformers import BatchEncoding, GenerationConfig, PreTrainedModel
 
 
 def compute_words_ids(tokenizer, sentence):
@@ -334,23 +334,29 @@ class SequenceLabellingConstraint:
                     ),
                     [
                         self.current_state.new_state(
-                            "complete_word_outside"  # First token of a word, we need to complete the word
-                            if self.next_is_subtoken()
-                            else "next_outside",  # current word is complete, return to next_outside state
+                            (
+                                "complete_word_outside"  # First token of a word, we need to complete the word
+                                if self.next_is_subtoken()
+                                else "next_outside"
+                            ),  # current word is complete, return to next_outside state
                             advance_current_token_index=True,
                             current_label_id=-1,
                         )
                     ]
                     + [
                         self.current_state.new_state(
-                            "complete_label_start"
-                            if self.start_labels_trie.next_is_last(label_id) == -1
-                            else "complete_word_inside",
+                            (
+                                "complete_label_start"
+                                if self.start_labels_trie.next_is_last(label_id) == -1
+                                else "complete_word_inside"
+                            ),
                             advance_current_token_index=False,
                             advance_current_label_token_index=True,
-                            current_label_id=-1
-                            if self.start_labels_trie.next_is_last(label_id) == -1
-                            else self.start_labels_trie.next_is_last(label_id),
+                            current_label_id=(
+                                -1
+                                if self.start_labels_trie.next_is_last(label_id) == -1
+                                else self.start_labels_trie.next_is_last(label_id)
+                            ),
                         )
                         for label_id in next_label_ids
                     ],
@@ -377,9 +383,11 @@ class SequenceLabellingConstraint:
                     torch.tensor(possible_end_labels),
                     [
                         self.current_state.new_state(
-                            "complete_label_end"
-                            if trie.next_is_last(label_id) == -1
-                            else "next_outside",
+                            (
+                                "complete_label_end"
+                                if trie.next_is_last(label_id) == -1
+                                else "next_outside"
+                            ),
                             advance_current_token_index=False,
                             advance_current_label_token_index=True,
                             current_label_id=self.current_state.current_label_id,
@@ -401,18 +409,22 @@ class SequenceLabellingConstraint:
                     ),
                     [
                         self.current_state.new_state(
-                            "complete_word_inside"  # First token of a word, we need to complete the word
-                            if self.next_is_subtoken()
-                            else "next_inside",  # current word is complete, return to next_inside state
+                            (
+                                "complete_word_inside"  # First token of a word, we need to complete the word
+                                if self.next_is_subtoken()
+                                else "next_inside"
+                            ),  # current word is complete, return to next_inside state
                             advance_current_token_index=True,
                             current_label_id=self.current_state.current_label_id,
                         )
                     ]
                     + [
                         self.current_state.new_state(
-                            "complete_label_end"
-                            if trie.next_is_last(label_id) == -1
-                            else "next_outside",
+                            (
+                                "complete_label_end"
+                                if trie.next_is_last(label_id) == -1
+                                else "next_outside"
+                            ),
                             advance_current_token_index=False,
                             advance_current_label_token_index=True,
                             current_label_id=self.current_state.current_label_id,
@@ -430,9 +442,11 @@ class SequenceLabellingConstraint:
                 torch.tensor([self.tokens_ids[self.current_state.current_token_index]]),
                 [
                     self.current_state.new_state(
-                        "complete_word_outside"  # Sub-token of a word, we need to complete the word
-                        if self.next_is_subtoken()
-                        else "next_outside",  # current word is complete, return to next_outside state
+                        (
+                            "complete_word_outside"  # Sub-token of a word, we need to complete the word
+                            if self.next_is_subtoken()
+                            else "next_outside"
+                        ),  # current word is complete, return to next_outside state
                         advance_current_token_index=True,
                         current_label_id=-1,
                     )
@@ -446,9 +460,11 @@ class SequenceLabellingConstraint:
                 torch.tensor([self.tokens_ids[self.current_state.current_token_index]]),
                 [
                     self.current_state.new_state(
-                        "complete_word_inside"  # Sub-token of a word, we need to complete the word
-                        if self.next_is_subtoken()
-                        else "next_inside",  # current word is complete, return to next_inside state
+                        (
+                            "complete_word_inside"  # Sub-token of a word, we need to complete the word
+                            if self.next_is_subtoken()
+                            else "next_inside"
+                        ),  # current word is complete, return to next_inside state
                         advance_current_token_index=True,
                         current_label_id=self.current_state.current_label_id,
                     )
@@ -464,14 +480,18 @@ class SequenceLabellingConstraint:
                 torch.tensor(next_label_ids),
                 [
                     self.current_state.new_state(
-                        "complete_label_start"
-                        if self.start_labels_trie.next_is_last(label_id) == -1
-                        else "complete_word_inside",
+                        (
+                            "complete_label_start"
+                            if self.start_labels_trie.next_is_last(label_id) == -1
+                            else "complete_word_inside"
+                        ),
                         advance_current_token_index=False,
                         advance_current_label_token_index=True,
-                        current_label_id=-1
-                        if self.start_labels_trie.next_is_last(label_id) == -1
-                        else self.start_labels_trie.next_is_last(label_id),
+                        current_label_id=(
+                            -1
+                            if self.start_labels_trie.next_is_last(label_id) == -1
+                            else self.start_labels_trie.next_is_last(label_id)
+                        ),
                     )
                     for label_id in next_label_ids
                 ],
@@ -489,9 +509,11 @@ class SequenceLabellingConstraint:
                 torch.tensor(possible_end_labels),
                 [
                     self.current_state.new_state(
-                        "complete_label_end"
-                        if trie.next_is_last(label_id) == -1
-                        else "complete_word_outside",
+                        (
+                            "complete_label_end"
+                            if trie.next_is_last(label_id) == -1
+                            else "complete_word_outside"
+                        ),
                         advance_current_token_index=False,
                         advance_current_label_token_index=True,
                         current_label_id=self.current_state.current_label_id,
@@ -649,7 +671,8 @@ class BeamNode:
             )
             # Compute score
             if (
-                token_id == self.pad_token_id or self.completed
+                token_id == self.pad_token_id
+                or self.completed
                 # or token_id == self.eos_token_id
             ):
                 # Ignore pad token
@@ -904,7 +927,10 @@ def constrained_beam_search(
             # if model is encoder decoder encoder_outputs are created
             # and added to `model_kwargs`
             model_kwargs = model._prepare_encoder_decoder_kwargs_for_generation(
-                inputs_tensor, model_kwargs, model_input_name
+                inputs_tensor,
+                model_kwargs,
+                model_input_name,
+                generation_config=GenerationConfig(),
             )
 
         # 5. Prepare `input_ids` which will be used for auto-regressive generation
