@@ -927,7 +927,10 @@ def constrained_beam_search(
             # if model is encoder decoder encoder_outputs are created
             # and added to `model_kwargs`
             model_kwargs = model._prepare_encoder_decoder_kwargs_for_generation(
-                inputs_tensor, model_kwargs, model_input_name
+                inputs_tensor,
+                model_kwargs,
+                model_input_name,
+                generation_config=generation_config,
             )
 
         # 5. Prepare `input_ids` which will be used for auto-regressive generation
@@ -936,8 +939,9 @@ def constrained_beam_search(
                 batch_size=8,
                 model_input_name=model_input_name,
                 model_kwargs=model_kwargs,
-                decoder_start_token_id=generation_config.decoder_start_token_id,
-                bos_token_id=generation_config.bos_token_id,
+                decoder_start_token_id=torch.tensor(
+                    generation_config.decoder_start_token_id
+                ),
                 device=inputs_tensor.device,
             )
         else:
